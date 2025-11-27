@@ -26,7 +26,7 @@ cpu(high, amd, ryzen_9_5950X, am4, 500).
 cpu(medium, amd, ryzen_5_5600X, am4, 260).
 cpu(low, amd, ryzen_3_4100, am4, 60).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%
 
 % motherboard(Tier, Brand, Model, Ram type, ram slots, maximum ram, Socket, Price)
 
@@ -59,7 +59,7 @@ motherboard(high, asus, rog_strix_b550_f_gaming, ddr4, 4, 128, am4, 155).
 motherboard(medium, gigabyte, b550m_ds3h, ddr4, 4, 128, am4, 85).
 motherboard(low, msi, a520m_a_pro, ddr4, 2, 64, am4, 50).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%
 
 % ram(type, Size in GB)
 % ddr4 ram sizes
@@ -83,19 +83,55 @@ ram(ddr5, 64).
 run :-
     write("Welcome to UNEE's Computer Hardware Expert System!"), nl,
     write("please answer the questions using numbers followed by a period(.)"), nl,nl,
-    get_tier_preference(Tier).
+    get_tier(Tier),
+    get_cpu_brand(Brand),
+    get_budget(Budget), nl.
 
-% question to get tierbased on use case
-get_tier_preference(Tier):-
+
+
+
+% questions
+%getting the tier from the use case
+get_tier(Tier):-
+    nl,
     write("What is your primary use case?"), nl, nl,
     write("1. High-end Gaming / Workstation"), nl,
     write("2. Multitasking / Mid-range Gaming"), nl,
-    write("3. Basic Office / Home Use"), nl,
+    write("3. Basic Office / Home Use"), nl, nl,
     read(Choice),
     (Choice = 1 -> Tier = high ;
     Choice = 2 -> Tier = medium ;
     Choice = 3 -> Tier = low ;
-    write("Invalid choice. Please try again."), nl, get_tier_preference(Tier)).
+    write("Invalid choice. Please try again."), nl, get_tier(Tier)), nl,
+    write(Tier), nl.
+
+
+%getting the cpu brand preference from the user
+get_cpu_brand(Brand) :-
+    nl,
+    write("Do you have a preferred CPU brand?"), nl, nl,
+    write("1. Intel"), nl,
+    write("2. AMD"), nl,
+    write("3. No Preference"), nl, nl,
+    read(Choice),
+    (Choice = 1 -> Brand = intel ;
+    Choice = 2 -> Brand = amd ;
+    Choice = 3 -> Brand = any ;
+    write("Invalid choice. Please try again."), nl, get_cpu_brand(Brand)), nl,
+    write(Brand), nl.
+
+
+%getting the budget from the user
+get_budget(Budget) :-
+    nl,
+    write("What is your budget?"), nl, nl,
+    read(Amount),
+    (number(Amount > 0) -> Budget = Amount ;
+    write("Invalid budget. Please enter a positive number."), nl, get_budget(Budget)), nl,
+    write(Budget), nl.
+
+
+
 
 
 
