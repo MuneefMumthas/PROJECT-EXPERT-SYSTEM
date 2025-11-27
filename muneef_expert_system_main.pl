@@ -77,7 +77,25 @@ ram(ddr5, 64).
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Interface
 
+run :-
+    write("Welcome to UNEE's Computer Hardware Expert System!"), nl,
+    write("please answer the questions using numbers followed by a period(.)"), nl,nl,
+    get_tier_preference(Tier).
+
+% question to get tierbased on use case
+get_tier_preference(Tier):-
+    write("What is your primary use case?"), nl, nl,
+    write("1. High-end Gaming / Workstation"), nl,
+    write("2. Multitasking / Mid-range Gaming"), nl,
+    write("3. Basic Office / Home Use"), nl,
+    read(Choice),
+    (Choice = 1 -> Tier = high ;
+    Choice = 2 -> Tier = medium ;
+    Choice = 3 -> Tier = low ;
+    write("Invalid choice. Please try again."), nl, get_tier_preference(Tier)).
 
 
 
