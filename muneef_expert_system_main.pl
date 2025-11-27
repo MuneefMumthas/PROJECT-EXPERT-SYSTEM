@@ -81,12 +81,11 @@ ram(ddr5, 64).
 % Interface
 
 run :-
-    write("Welcome to UNEE's Computer Hardware Expert System!"), nl,
+    write("Welcome to UNEE's PC Builder Expert System!"), nl,
     write("please answer the questions using numbers followed by a period(.)"), nl,nl,
     get_tier(Tier),
     get_cpu_brand(Brand),
     get_budget(Budget), nl.
-
 
 
 
@@ -126,7 +125,7 @@ get_budget(Budget) :-
     nl,
     write("What is your budget?"), nl, nl,
     read(Amount),
-    (number(Amount > 0) -> Budget = Amount ;
+    (number(Amount) -> Budget = Amount ;
     write("Invalid budget. Please enter a positive number."), nl, get_budget(Budget)), nl,
     write(Budget), nl.
 
