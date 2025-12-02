@@ -84,6 +84,7 @@ run :-
     write("Welcome to UNEE's PC Builder Expert System!"), nl,
     write("please answer the questions using numbers followed by a period(.)"), nl,nl,
     get_tier(Tier),
+    get_user_priority(Priority),
     get_cpu_brand(Brand),
     get_budget(Budget), nl.
 
@@ -103,6 +104,18 @@ get_tier(Tier):-
     Choice = 3 -> Tier = low ;
     write("Invalid choice. Please try again."), nl, get_tier(Tier)), nl,
     write(Tier), nl.
+
+%getting the user priority for the build
+get_user_priority(Priority) :-
+    nl,
+    write("What is your priority?"), nl, nl,
+    write("1. Save money with older hardware"), nl,
+    write("2. Be future proof with newer hardware"), nl,
+    read(Choice),
+    (Choice = 1 -> Priority = value ;
+    Choice = 2 -> Priority = future_proof ;
+    write("Invalid choice. Please try again."), nl, get_user_priority(Priority)), nl,
+    write(Priority), nl.
 
 
 %getting the cpu brand preference from the user
