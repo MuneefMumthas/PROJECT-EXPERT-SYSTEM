@@ -26,6 +26,7 @@ cpu(high, amd, ryzen_9_5950X, am4, 500).
 cpu(medium, amd, ryzen_5_5600X, am4, 260).
 cpu(low, amd, ryzen_3_4100, am4, 60).
 
+
 %%%%%%%%%%%%%%%%%%%%%%%
 
 % motherboard(Tier, Brand, Model, Ram type, ram slots, maximum ram, Socket, Price)
@@ -75,6 +76,49 @@ ram(ddr5, 32).
 ram(ddr5, 48).
 ram(ddr5, 64).
 
+%%%%%%%%%%%%%%%%%%%%%%%
+
+%Rules and Interface for the expert system
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%
+% Socket priority
+
+% All AM5 and LGA1700 sockets are future proof
+socket_priority(am5, future_proof).
+socket_priority(lga1700, future_proof).
+
+% All AM4 and LGA1200 sockets are value
+socket_priority(am4, value).
+socket_priority(lga1200, value).
+
+%%%%%%%%%%%%%%%%%%%%%%%
+
+% Brand preference helper functions
+
+% If user picked a specific brand, use that
+brand_from_pref(intel, intel).
+brand_from_pref(amd,   amd).
+
+% If user has no preference, allow both brands
+brand_from_pref(any, intel).
+brand_from_pref(any, amd).
+%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+find_cpu(Tier, Priority, BrandPref, CpuBrand, CpuModel, Socket, Price) :-
+
+    % selecting the brand based on user preference
+    brand_from_pref(BrandPref, CpuBrand),
+
+    % selecting the socket that matches the user's priority
+    socket_priority(Socket, Priority),
+
+    % picking a CPU that matches the tier, brand, and priority
+    cpu(Tier, CpuBrand, CpuModel, Socket, Price).
+
+    
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -85,9 +129,18 @@ run :-
     write("please answer the questions using numbers followed by a period(.)"), nl,nl,
     get_tier(Tier),
     get_user_priority(Priority),
-    get_cpu_brand(Brand),
-    get_budget(Budget), nl.
+    get_cpu_brand(BrandPref),
+    %get_budget(Budget), nl,
 
+    % Finding a suitable CPU based on user inputs
+    find_cpu(Tier, Priority, BrandPref, CpuBrand, CpuModel, Socket, CpuPrice),
+    write("===== CPU Recommendation ====="), nl,
+    write("Use-case tier: "), write(Tier), nl,
+    write("Brand preference: "), write(BrandPref), nl,
+    write("Priority: "), write(Priority), nl, nl,
+    write("CPU: "), write(CpuBrand), write(" "), write(CpuModel), nl,
+    write("Socket: "), write(Socket), nl,
+    write("Approx CPU price: "), write(CpuPrice), nl.
 
 
 % questions
