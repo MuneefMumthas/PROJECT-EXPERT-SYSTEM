@@ -97,12 +97,12 @@ socket_priority(lga1200, value).
 % Brand preference helper functions
 
 % If user picked a specific brand, use that
-brand_from_pref(intel, intel).
-brand_from_pref(amd,   amd).
+brand_from_pref(intel, [intel]).
+brand_from_pref(amd,   [amd]).
 
 % If user has no preference, allow both brands
-brand_from_pref(any, intel).
-brand_from_pref(any, amd).
+brand_from_pref(any, [intel, amd]).
+
 %%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -110,15 +110,46 @@ brand_from_pref(any, amd).
 find_cpu(Tier, Priority, BrandPref, CpuBrand, CpuModel, Socket, Price) :-
 
     % selecting the brand based on user preference
-    brand_from_pref(BrandPref, CpuBrand),
+    brand_from_pref(BrandPref, CpuBrandList),
+    member(CpuBrand, CpuBrandList),
+
 
     % selecting the socket that matches the user's priority
     socket_priority(Socket, Priority),
 
-    % picking a CPU that matches the tier, brand, and priority
+    % picking a CPU that matches the tier, brand, socket
     cpu(Tier, CpuBrand, CpuModel, Socket, Price).
 
-    
+
+%%%%%%%%%%%%%%%%%%%%%%%
+%Motherboard priority
+
+motherboard_priority(lga1700, ddr5, future_proof).
+motherboard_priority(lga1700, ddr4, value).
+motherboard_priority(lga1200, ddr4, value).
+
+motherboard_priority(am5, ddr5, future_proof).
+motherboard_priority(am4, ddr4, value).
+
+
+find_motherboard(Tier, Priority, MbBrand, MbModel, MbRam_type, Ram_slots, MbMaximum_ram, Socket, Price):-
+
+    %selecting the motherboard socket and supported ram type based on priority
+    motherboard_priority(Socket, MbRam_type, Priority),
+
+    %picking a motherboard that matches the tier, socket, ram type
+    motherboard(Tier, MbBrand, MbModel, MbRam_type, Ram_slots, MbMaximum_ram, Socket, Price).
+
+
+pc_config(
+    Tier, Priority, BrandPref, CpuBrand, CpuModel, Socket, CpuPrice,
+    MbBrand, MbModel, MbRam_type, Ram_slots, MbMaximum_ram, MbPrice) :-
+
+    % Finding a CPU that matches tier, brand preference and socket priority
+    find_cpu(Tier, Priority, BrandPref, CpuBrand, CpuModel, Socket, CpuPrice),
+
+    % Finding a compatible motherboard using the same socket and priority
+    find_motherboard(Tier, Priority, MbBrand, MbModel, MbRam_type, Ram_slots, MbMaximum_ram, Socket, MbPrice).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -133,14 +164,34 @@ run :-
     %get_budget(Budget), nl,
 
     % Finding a suitable CPU based on user inputs
-    find_cpu(Tier, Priority, BrandPref, CpuBrand, CpuModel, Socket, CpuPrice),
-    write("===== CPU Recommendation ====="), nl,
+    pc_config(
+    Tier, Priority, BrandPref, CpuBrand, CpuModel, Socket, CpuPrice,
+    MbBrand, MbModel, MbRam_type, Ram_slots, MbMaximum_ram, MbPrice),
+    write("===== Hardware Recommendation ====="), nl,
     write("Use-case tier: "), write(Tier), nl,
-    write("Brand preference: "), write(BrandPref), nl,
-    write("Priority: "), write(Priority), nl, nl,
+    write("Priority: "), write(Priority), nl,
+    write("CPU Brand preference: "), write(BrandPref), nl, nl,
+    
+    %cpu details
+    write("===== CPU ====="), nl,
     write("CPU: "), write(CpuBrand), write(" "), write(CpuModel), nl,
-    write("Socket: "), write(Socket), nl,
-    write("Approx CPU price: "), write(CpuPrice), nl.
+    write("CPU Socket: "), write(Socket), nl,
+    write("Approximate CPU price: "), write(CpuPrice), nl, nl,
+
+
+    %motherboard details
+    write("===== Motherboard ====="), nl,
+    write("Motherboard: "), write(MbBrand), write(" "), write(MbModel), nl,
+    write("Motherboard Socket: "), write(Socket), nl,
+    write("Supported RAM type: "), write(MbRam_type), nl,
+    write("RAM slots: "), write(Ram_slots), nl,
+    write("Maximum RAM supported (GB): "), write(MbMaximum_ram), nl,
+    write("Approximate Motherboard price: "), write(MbPrice), nl, nl,
+    fail.
+run.
+
+
+
 
 
 % questions
