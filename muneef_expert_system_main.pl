@@ -78,6 +78,22 @@ ram(ddr5, 64).
 
 %%%%%%%%%%%%%%%%%%%%%%%
 
+% gpu(Tier, Brand, Model, Price)
+% Low tier
+gpu(low, nvidia, rtx_3050, 250).
+gpu(low, amd, rx_6600, 200).
+
+% Medium tier
+gpu(medium, nvidia, rtx_4060, 300).
+gpu(medium, amd, rx_7600, 250).
+
+% High tier
+gpu(high, nvidia, rtx_5070, 500).
+gpu(high, amd, rx_9070, 600).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%
+
 %Rules and Interface for the expert system
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -94,31 +110,38 @@ socket_priority(lga1200, value).
 
 %%%%%%%%%%%%%%%%%%%%%%%
 
-% Brand preference helper functions
+% CPU Brand preference helper functions
 
 % If user picked a specific brand, use that
-brand_from_pref(intel, [intel]).
-brand_from_pref(amd,   [amd]).
+cpu_brand_from_pref(intel, [intel]).
+cpu_brand_from_pref(amd,   [amd]).
 
 % If user has no preference, allow both brands
-brand_from_pref(any, [intel, amd]).
+cpu_brand_from_pref(any, [intel, amd]).
 
 %%%%%%%%%%%%%%%%%%%%%%%
 
 
 
-find_cpu(Tier, Priority, BrandPref, CpuBrand, CpuModel, Socket, Price) :-
+find_cpu(Tier, Priority, CpuBrandPref, CpuBrand, CpuModel, Socket, CpuPrice) :-
 
     % selecting the brand based on user preference
-    brand_from_pref(BrandPref, CpuBrandList),
-    member(CpuBrand, CpuBrandList),
+    cpu_brand_from_pref(CpuBrandPref, CpuBrandList),
 
+    % selecting all possible CPU that match the tier and brand preference and returning a list
+    findall(CpuPrice-CpuBrand-CpuModel-Socket,
+    (
+        member(CpuBrand, CpuBrandList),
+        % selecting the socket that matches the user's priority
+        socket_priority(Socket, Priority),
 
-    % selecting the socket that matches the user's priority
-    socket_priority(Socket, Priority),
+        % picking a CPU that matches the tier, brand, socket
+        cpu(Tier, CpuBrand, CpuModel, Socket, CpuPrice)
+    ),
+    L),
 
-    % picking a CPU that matches the tier, brand, socket
-    cpu(Tier, CpuBrand, CpuModel, Socket, Price).
+    % sorting the list based on price and returning the cheapest option
+    sort(L, [CpuPrice-CpuBrand-CpuModel-Socket|_]).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%
@@ -140,16 +163,60 @@ find_motherboard(Tier, Priority, MbBrand, MbModel, MbRam_type, Ram_slots, MbMaxi
     %picking a motherboard that matches the tier, socket, ram type
     motherboard(Tier, MbBrand, MbModel, MbRam_type, Ram_slots, MbMaximum_ram, Socket, Price).
 
+%%%%%%%%%%%%%%%%%%%%%%%
+
+% GPU Brand preference helper functions
+
+% If user picked a specific brand, use that
+gpu_brand_from_pref(nvidia, [nvidia]).
+gpu_brand_from_pref(amd,   [amd]).
+
+% If user has no preference, allow both brands
+gpu_brand_from_pref(any, [nvidia, amd]).
+
+
+
+% finding GPU based on tier and brand preference
+find_gpu(Tier, GpuBrandPref, GpuBrand, GpuModel, GpuPrice) :-
+
+    % selecting the brand based on user preference
+    gpu_brand_from_pref(GpuBrandPref, GpuBrandList),
+
+
+    % selecting all possible GPUs that match the tier and brand preference and returning a list
+    findall(GpuPrice-GpuBrand-GpuModel,
+    (
+        member(GpuBrand, GpuBrandList),
+
+        % picking a GPU that matches the tier and brand
+        gpu(Tier, GpuBrand, GpuModel, GpuPrice)
+    ),
+    L),
+
+    % sorting the list based on price and returning the cheapest option
+    sort(L, [GpuPrice-GpuBrand-GpuModel|_]).
+
+    
+
+
+%%%%%%%%%%%%%%%%%%%%%%%
+% PC Configuration
 
 pc_config(
-    Tier, Priority, BrandPref, CpuBrand, CpuModel, Socket, CpuPrice,
-    MbBrand, MbModel, MbRam_type, Ram_slots, MbMaximum_ram, MbPrice) :-
+    Tier, Priority, CpuBrandPref, CpuBrand, CpuModel, Socket, CpuPrice,
+    MbBrand, MbModel, MbRam_type, Ram_slots, MbMaximum_ram, MbPrice,
+    GpuBrandPref, GpuBrand, GpuModel, GpuPrice) :-
 
     % Finding a CPU that matches tier, brand preference and socket priority
-    find_cpu(Tier, Priority, BrandPref, CpuBrand, CpuModel, Socket, CpuPrice),
+    find_cpu(Tier, Priority, CpuBrandPref, CpuBrand, CpuModel, Socket, CpuPrice),
 
     % Finding a compatible motherboard using the same socket and priority
-    find_motherboard(Tier, Priority, MbBrand, MbModel, MbRam_type, Ram_slots, MbMaximum_ram, Socket, MbPrice).
+    find_motherboard(Tier, Priority, MbBrand, MbModel, MbRam_type, Ram_slots, MbMaximum_ram, Socket, MbPrice),
+
+    % Finding a GPU that matches tier and brand preference
+    find_gpu(Tier, GpuBrandPref, GpuBrand, GpuModel, GpuPrice).
+
+%%%%%%%%%%%%%%%%%%%%%%%
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -160,17 +227,23 @@ run :-
     write("please answer the questions using numbers followed by a period(.)"), nl,nl,
     get_tier(Tier),
     get_user_priority(Priority),
-    get_cpu_brand(BrandPref),
+    get_cpu_brand(CpuBrandPref),
+    get_gpu_brand(GpuBrandPref),
     %get_budget(Budget), nl,
 
     % Finding a suitable CPU based on user inputs
     pc_config(
-    Tier, Priority, BrandPref, CpuBrand, CpuModel, Socket, CpuPrice,
-    MbBrand, MbModel, MbRam_type, Ram_slots, MbMaximum_ram, MbPrice),
+    Tier, Priority, 
+    CpuBrandPref, CpuBrand, CpuModel, Socket, CpuPrice,
+    MbBrand, MbModel, MbRam_type, Ram_slots, MbMaximum_ram, MbPrice,
+    GpuBrandPref, GpuBrand, GpuModel, GpuPrice),
+
+
     write("===== Hardware Recommendation ====="), nl,
     write("Use-case tier: "), write(Tier), nl,
     write("Priority: "), write(Priority), nl,
-    write("CPU Brand preference: "), write(BrandPref), nl, nl,
+    write("CPU Brand preference: "), write(CpuBrandPref), nl, 
+    write("GPU Brand preference: "), write(GpuBrandPref), nl,nl,
     
     %cpu details
     write("===== CPU ====="), nl,
@@ -187,6 +260,13 @@ run :-
     write("RAM slots: "), write(Ram_slots), nl,
     write("Maximum RAM supported (GB): "), write(MbMaximum_ram), nl,
     write("Approximate Motherboard price: "), write(MbPrice), nl, nl,
+
+
+    %gpu details
+    write("===== GPU ====="), nl,
+    write("GPU: "), write(GpuBrand), write(" "), write(GpuModel), nl,
+    write("Approximate GPU price: "), write(GpuPrice), nl, nl,
+    
     fail.
 run.
 
@@ -234,6 +314,20 @@ get_cpu_brand(Brand) :-
     Choice = 2 -> Brand = amd ;
     Choice = 3 -> Brand = any ;
     write("Invalid choice. Please try again."), nl, get_cpu_brand(Brand)), nl,
+    write(Brand), nl.
+
+%getting the gpu brand preference from the user
+get_gpu_brand(Brand) :-
+    nl,
+    write("Do you have a preferred GPU brand?"), nl, nl,
+    write("1. Nvidia"), nl,
+    write("2. AMD"), nl,
+    write("3. No Preference"), nl, nl,
+    read(Choice),
+    (Choice = 1 -> Brand = nvidia ;
+    Choice = 2 -> Brand = amd ;
+    Choice = 3 -> Brand = any ;
+    write("Invalid choice. Please try again."), nl, get_gpu_brand(Brand)), nl,
     write(Brand), nl.
 
 
