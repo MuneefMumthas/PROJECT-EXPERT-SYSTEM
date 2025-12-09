@@ -196,16 +196,53 @@ find_gpu(Tier, GpuBrandPref, GpuBrand, GpuModel, GpuPrice) :-
     % sorting the list based on price and returning the cheapest option
     sort(L, [GpuPrice-GpuBrand-GpuModel|_]).
 
+%%%%%%%%%%%%%%%%%%%%%%%
+% find number of ram sticks recommended based on motherboard ram slots and maximum ram supported
+
+recommended_ram(low, 16).
+recommended_ram(medium, 32).
+recommended_ram(high, 64).
+
+calculate_ram_sticks(Tier, MbMaximum_ram, MbRam_type, Ram_slots, Recommended_ram, Num_sticks, Stick_size):-
     
+    % getting the recommended ram based on the tier
+    recommended_ram(Tier, Recommended_ram),
+
+    %recommened ram should be less than or equal to motherboard maximum ram
+    Recommended_ram =< MbMaximum_ram,
+    
+    %ram type should be supported by motherboard
+    ram(MbRam_type, Stick_size),
+
+    %stick size should be less than or equal to recommended ram
+    Stick_size =< Recommended_ram,
+
+    %calculating number of ram sticks needed
+    Num_sticks is ceiling(Recommended_ram / Stick_size),
+
+
+    %number of ram sticks should be supported by motherboard ram slots
+    Num_sticks =< Ram_slots,
+    Num_sticks = 2,
+
+    Total is Num_sticks * Stick_size,
+    Total = Recommended_ram.
+
+%%%%%%%%%%%%%%%%%%%%%%%
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%
 % PC Configuration
 
 pc_config(
-    Tier, Priority, CpuBrandPref, CpuBrand, CpuModel, Socket, CpuPrice,
+    Tier, Priority,
+    CpuBrandPref, CpuBrand, CpuModel, Socket, CpuPrice,
     MbBrand, MbModel, MbRam_type, Ram_slots, MbMaximum_ram, MbPrice,
-    GpuBrandPref, GpuBrand, GpuModel, GpuPrice) :-
+    GpuBrandPref, GpuBrand, GpuModel, GpuPrice, 
+    Recommended_ram, Num_sticks, Stick_size,
+    TotalPrice) :-
 
     % Finding a CPU that matches tier, brand preference and socket priority
     find_cpu(Tier, Priority, CpuBrandPref, CpuBrand, CpuModel, Socket, CpuPrice),
@@ -214,7 +251,12 @@ pc_config(
     find_motherboard(Tier, Priority, MbBrand, MbModel, MbRam_type, Ram_slots, MbMaximum_ram, Socket, MbPrice),
 
     % Finding a GPU that matches tier and brand preference
-    find_gpu(Tier, GpuBrandPref, GpuBrand, GpuModel, GpuPrice).
+    find_gpu(Tier, GpuBrandPref, GpuBrand, GpuModel, GpuPrice),
+
+    %calculating number of ram sticks needed
+    calculate_ram_sticks(Tier, MbMaximum_ram, MbRam_type, Ram_slots, Recommended_ram, Num_sticks, Stick_size),
+    
+    TotalPrice is CpuPrice + MbPrice + GpuPrice. 
 
 %%%%%%%%%%%%%%%%%%%%%%%
 
@@ -228,28 +270,31 @@ run :-
     get_tier(Tier),
     get_user_priority(Priority),
     get_cpu_brand(CpuBrandPref),
-    get_gpu_brand(GpuBrandPref),
-    %get_budget(Budget), nl,
+    get_gpu_brand(GpuBrandPref), nl,
 
     % Finding a suitable CPU based on user inputs
     pc_config(
     Tier, Priority, 
     CpuBrandPref, CpuBrand, CpuModel, Socket, CpuPrice,
     MbBrand, MbModel, MbRam_type, Ram_slots, MbMaximum_ram, MbPrice,
-    GpuBrandPref, GpuBrand, GpuModel, GpuPrice),
+    GpuBrandPref, GpuBrand, GpuModel, GpuPrice,
+    Recommended_ram, Num_sticks, Stick_size,
+    TotalPrice),
+
 
 
     write("===== Hardware Recommendation ====="), nl,
     write("Use-case tier: "), write(Tier), nl,
     write("Priority: "), write(Priority), nl,
     write("CPU Brand preference: "), write(CpuBrandPref), nl, 
-    write("GPU Brand preference: "), write(GpuBrandPref), nl,nl,
+    write("GPU Brand preference: "), write(GpuBrandPref), nl, nl,
+    
     
     %cpu details
     write("===== CPU ====="), nl,
     write("CPU: "), write(CpuBrand), write(" "), write(CpuModel), nl,
     write("CPU Socket: "), write(Socket), nl,
-    write("Approximate CPU price: "), write(CpuPrice), nl, nl,
+    write("Approximate CPU price (GBP): "), write(CpuPrice), nl, nl,
 
 
     %motherboard details
@@ -258,15 +303,24 @@ run :-
     write("Motherboard Socket: "), write(Socket), nl,
     write("Supported RAM type: "), write(MbRam_type), nl,
     write("RAM slots: "), write(Ram_slots), nl,
-    write("Maximum RAM supported (GB): "), write(MbMaximum_ram), nl,
-    write("Approximate Motherboard price: "), write(MbPrice), nl, nl,
+    write("Maximum RAM supported: "), write(MbMaximum_ram), write(" GB"),nl,
+    write("Approximate Motherboard price (GBP): "), write(MbPrice), nl, nl,
 
 
     %gpu details
     write("===== GPU ====="), nl,
     write("GPU: "), write(GpuBrand), write(" "), write(GpuModel), nl,
-    write("Approximate GPU price: "), write(GpuPrice), nl, nl,
-    
+    write("Approximate GPU price (GBP): "), write(GpuPrice), nl, nl,
+
+    %ram details
+    write("===== RAM ====="), nl,
+    write("Recommended RAM size: "), write(Recommended_ram), write(" GB"), nl,
+    write("RAM type: "), write(MbRam_type), nl,
+    write("RAM stick size: "), write(Stick_size), nl,
+    write("Number of RAM sticks needed: "), write(Num_sticks), nl, nl,
+
+    write("Total Price of CPU, MotherBoard, and GPU: "), write("Approximately "), write(TotalPrice), write(" GBP"), nl,nl,
+
     fail.
 run.
 
@@ -294,7 +348,7 @@ get_user_priority(Priority) :-
     nl,
     write("What is your priority?"), nl, nl,
     write("1. Save money with older hardware"), nl,
-    write("2. Be future proof with newer hardware"), nl,
+    write("2. Be future proof with newer hardware"), nl, nl,
     read(Choice),
     (Choice = 1 -> Priority = value ;
     Choice = 2 -> Priority = future_proof ;
@@ -331,14 +385,6 @@ get_gpu_brand(Brand) :-
     write(Brand), nl.
 
 
-%getting the budget from the user
-get_budget(Budget) :-
-    nl,
-    write("What is your budget?"), nl, nl,
-    read(Amount),
-    (number(Amount) -> Budget = Amount ;
-    write("Invalid budget. Please enter a positive number."), nl, get_budget(Budget)), nl,
-    write(Budget), nl.
 
 
 
