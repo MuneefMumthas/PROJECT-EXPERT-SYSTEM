@@ -199,14 +199,21 @@ find_gpu(Tier, GpuBrandPref, GpuBrand, GpuModel, GpuPrice) :-
 %%%%%%%%%%%%%%%%%%%%%%%
 % find number of ram sticks recommended based on motherboard ram slots and maximum ram supported
 
-recommended_ram(low, 16).
-recommended_ram(medium, 32).
-recommended_ram(high, 64).
+% recommended ram based on tier and ram type as a way to detect priority, as ram type is already selected based on priority
+recommended_ram(low, ddr4, 16).
+recommended_ram(low, ddr5, 32).
+
+recommended_ram(medium, ddr4,32).
+recommended_ram(medium, ddr5,64).
+
+recommended_ram(high, ddr4, 64).
+recommended_ram(high, ddr5, 128).
+
 
 calculate_ram_sticks(Tier, MbMaximum_ram, MbRam_type, Ram_slots, Recommended_ram, Num_sticks, Stick_size):-
     
     % getting the recommended ram based on the tier
-    recommended_ram(Tier, Recommended_ram),
+    recommended_ram(Tier, MbRam_type, Recommended_ram),
 
     %recommened ram should be less than or equal to motherboard maximum ram
     Recommended_ram =< MbMaximum_ram,
